@@ -98,3 +98,60 @@ alembic revision --autogenerate -m "описание изменения"
 ```bash
 alembic upgrade head
 ```
+
+## Запуск в Kubernetes (minikube)
+
+0. Если имя пользователя Windows содержит кириллицу (например, путь `C:\Users\Катя`) , рекомендуется задать отдельную директорию для данных minikube:
+
+```powershell
+$env:MINIKUBE_HOME="C:\minikube"
+``` 
+Это позволяет избежать ошибки при использовании minikube docker-env, когда Docker не может найти сертификаты minikube из-за некорректной обработки кириллицы в пути пользователя:
+```text
+ERROR: open C:\Users\╨Ъ╨░╤В╤П\.minikube\certs\ca.pem: The system cannot find the path specified.
+```
+При этом файл существует 
+
+
+1. Запустите minikube:
+
+```bash
+minikube start
+```
+
+2. Переключите Docker CLI на docker-демон minikube
+ 
+```bash
+minikube -p minikube docker-env --shell powershell | Invoke-Expression
+``` 
+3. Соберите образы приложения:
+ 
+```bash
+docker build -t task-tracker-backend:latest ./backend
+docker build -t task-tracker-frontend:latest ./frontend
+```
+
+4. Примените Kubernetes-манифесты
+
+```bash
+kubectl apply -f kubernetes/
+``` 
+
+5.  Проверьте состояние Pod'ов
+
+```bash
+kubectl get pods
+``` 
+После запуска ожидается:
+```text
+backend    Running
+frontend   Running
+postgres   Running
+migrate    Completed
+```
+
+6. Откройте `frontend`
+
+```bash
+minikube service frontend --url
+``` 

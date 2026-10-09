@@ -1,0 +1,72 @@
+.delete-modal {
+  max-width: 430px;
+
+  text-align: center;
+}
+
+.delete-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 16px;
+
+  color: #cf5169;
+  background:
+    linear-gradient(
+      135deg,
+      #ffecef,
+      #ffe3ee
+    );
+
+  border-radius: 15px;
+
+  font-size: 24px;
+  font-weight: 800;
+
+  box-shadow:
+    0 8px 22px
+    rgba(207, 81, 105, 0.12);
+}
+
+.delete-modal h2 {
+  margin: 0;
+
+  color: #34364f;
+
+  font-size: 22px;
+}
+
+.delete-modal p {
+  margin: 10px 0 22px;
+
+  color: #7b7e98;
+
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.delete-modal .modal-actions {
+  justify-content: center;
+}
+
+.button-danger-confirm {
+  color: #ffffff;
+
+  background:
+    linear-gradient(
+      135deg,
+      #ef6f87,
+      #d94d68
+    );
+
+  box-shadow:
+    0 10px 20px
+    rgba(217, 77, 104, 0.18);
+}
+
+.button-danger-confirm:hover:not(:disabled) {
+  transform: translateY(-1px);
+}

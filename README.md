@@ -155,3 +155,71 @@ migrate    Completed
 ```bash
 minikube service frontend --url
 ``` 
+
+## Установка Victoria Logs
+
+Для Victoria Logs используется официальный Helm chart.
+
+1. Добавить Helm-репозиторий VictoriaMetrics
+```bash
+helm repo add vm https://victoriametrics.github.io/helm-charts/
+helm repo update
+``` 
+
+2. Создать отдельный namespace для инфраструктуры логирования:
+```bash
+kubectl create namespace logging
+```
+
+3. Victoria Logs устанавливается командой
+```bash
+helm install victoria-logs vm/victoria-logs-single `
+  --namespace logging `
+  --values kubernetes/logging/victoria-logs-values.yaml `
+  --wait
+```
+Конфигурация Victoria Logs хранится в `kubernetes/logging/victoria-logs-values.yaml`
+
+Для доступа к vmui используется port-forward:
+```bash
+kubectl port-forward -n logging `
+  svc/victoria-logs-victoria-logs-single-server `
+  9428:9428
+```
+После этого vmui доступен по адресу: `http://localhost:9428/select/vmui/`
+
+4. Для доставки логов используется официальный victoria-logs-collector
+```bash
+helm install victoria-logs-collector vm/victoria-logs-collector `
+  --namespace logging `
+  --values kubernetes/logging/victoria-logs-collector-values.yaml `
+  --wait
+``` 
+
+Его конфигурация находится в `kubernetes/logging/victoria-logs-collector-values.yaml`.
+Victoria Logs Collector читает логи Kubernetes-контейнеров и отправляет их в Victoria Logs через remoteWrite
+
+5. Подключение Grafana
+```bash
+helm repo add grafana-community https://grafana-community.github.io/helm-charts
+helm repo update
+helm install grafana grafana-community/grafana `
+  --namespace logging `
+  --values kubernetes/logging/grafana-values.yaml `
+  --wait
+``` 
+
+Настройки Grafana находятся в `kubernetes/logging/grafana-values.yaml`
+В конфигурации устанавливается плагин `victoriametrics-logs-datasource` и настраивается datasource Victoria Logs
+
+Для локального доступа
+```bash
+kubectl port-forward -n logging svc/grafana 3000:80
+```
+
+Будет доступна по `http://localhost:3000`
+
+Логин `admin`
+
+Пароль `admin`
+

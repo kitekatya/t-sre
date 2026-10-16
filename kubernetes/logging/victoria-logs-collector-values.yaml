@@ -1,0 +1,5 @@
+collector:
+  excludeFilter: "kubernetes.pod_namespace:in(kube-system, logging)"
+
+remoteWrite:
+  - url: http://victoria-logs-victoria-logs-single-server.logging.svc.cluster.local:9428

@@ -5,6 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
 from .database import engine
+from .logging_config import configure_logging
+from .middleware.request_logging import LoggingMiddleware
 from .routers import health, tasks
 
 
@@ -14,6 +16,7 @@ async def lifespan(app: FastAPI):
 
     await engine.dispose()
 
+configure_logging()
 
 app = FastAPI(title="Task Tracker API", version="1.0.0", lifespan=lifespan)
 
@@ -28,6 +31,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(LoggingMiddleware)
 
 app.include_router(health.router)
 app.include_router(tasks.router)

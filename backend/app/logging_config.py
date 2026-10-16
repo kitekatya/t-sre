@@ -3,6 +3,7 @@ import sys
 
 import structlog
 
+
 def add_message(
     logger,
     method_name,

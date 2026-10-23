@@ -12,6 +12,10 @@ spec:
     metadata:
       labels:
         app: postgres
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9187"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - image: postgres:17-alpine
@@ -37,6 +41,27 @@ spec:
         volumeMounts:
         - name: postgres-data
           mountPath: /var/lib/postgresql/data
+      - image: prometheuscommunity/postgres-exporter:v0.18.1
+        name: postgres-exporter
+        ports:
+          - name: metrics
+            containerPort: 9187
+        env:
+          - name: DATA_SOURCE_URI
+            valueFrom:
+              secretKeyRef:
+                name: task-tracker-secret
+                key: DATA_SOURCE_NAME
+          - name: DATA_SOURCE_USER
+            valueFrom:
+              secretKeyRef:
+                name: task-tracker-secret
+                key: POSTGRES_USER
+          - name: DATA_SOURCE_PASS
+            valueFrom:
+              secretKeyRef:
+                name: task-tracker-secret
+                key: POSTGRES_PASSWORD
       volumes:
       - name: postgres-data
         persistentVolumeClaim:

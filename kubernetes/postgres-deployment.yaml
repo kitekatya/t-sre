@@ -47,11 +47,13 @@ spec:
           - name: metrics
             containerPort: 9187
         env:
-          - name: DATA_SOURCE_URI
+          - name: POSTGRES_DB
             valueFrom:
               secretKeyRef:
                 name: task-tracker-secret
-                key: DATA_SOURCE_NAME
+                key: POSTGRES_DB
+          - name: DATA_SOURCE_URI
+            value: "localhost:5432/$(POSTGRES_DB)?sslmode=disable"
           - name: DATA_SOURCE_USER
             valueFrom:
               secretKeyRef:

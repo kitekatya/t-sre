@@ -1,0 +1,90 @@
+---
+server:
+  fullnameOverride: task-vmalert
+
+  datasource:
+    url: http://vm-single-victoria-metrics-single-server.monitoring.svc.cluster.local:8428
+
+  notifier:
+    url: http://task-alertmanager.monitoring.svc.cluster.local:9093
+
+  config:
+    alerts:
+      groups:
+        - name: task-tracker
+          interval: 15s
+          rules:
+            # 1. Ошибки получения списка задач
+            - alert: TaskListErrors
+              expr: |
+                sum(increase(http_requests_total{
+                  namespace="default",
+                  job="kubernetes-pods",
+                  handler="/api/tasks",
+                  method="GET",
+                  status="5xx"
+                }[5m])) >= 2
+              for: 0s
+              labels:
+                severity: warning
+              annotations:
+                summary: "Ошибки получения списка задач"
+                description: "За 5 минут произошло минимум 2 ошибки при получении списка."
+
+            # 2. Ошибки создания задач
+            - alert: TaskCreationErrors
+              expr: |
+                sum(increase(http_requests_total{
+                  namespace="default",
+                  job="kubernetes-pods",
+                  handler="/api/tasks",
+                  method="POST",
+                  status="5xx"
+                }[5m])) >= 2
+              for: 0s
+              labels:
+                severity: warning
+              annotations:
+                summary: "Ошибки создания задач"
+                description: "За 5 минут произошло минимум 2 ошибки при создании задач."
+
+            # 3. Ошибки изменения задач
+            - alert: TaskUpdateErrors
+              expr: |
+                sum(increase(http_requests_total{
+                  namespace="default",
+                  job="kubernetes-pods",
+                  handler="/api/tasks/{task_id}",
+                  method="PUT",
+                  status="5xx"
+                }[5m])) >= 2
+              for: 0s
+              labels:
+                severity: warning
+              annotations:
+                summary: "Ошибки изменения задач"
+                description: "За 5 минут произошло минимум 2 ошибки при изменении задач."
+
+            # 4. Память Python
+            - alert: BackendHighMemory
+              expr: |
+                process_resident_memory_bytes{
+                  namespace="default",
+                  pod=~"backend-.*"
+                } > 209715200
+              for: 1m
+              labels:
+                severity: warning
+              annotations:
+                summary: "Высокое потребление памяти Backend"
+                description: "Python-процесс использует больше 200 МиБ памяти."
+
+alertmanager:
+  enabled: true
+  fullnameOverride: task-alertmanager
+
+  persistentVolume:
+    enabled: false
+
+  configSecret: task-alertmanager-config
+...

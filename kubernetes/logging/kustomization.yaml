@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: logging
+
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    grafana_dashboard: "1"
+
+configMapGenerator:
+  - name: task-tracker-dashboard
+    files:
+      - grafana-dashboards/task-tracker.json
+
+  - name: postgres-exporter-dashboard
+    files:
+      - grafana-dashboards/postgres-exporter.json

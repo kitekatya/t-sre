@@ -14,70 +14,131 @@ server:
         - name: task-tracker
           interval: 15s
           rules:
-            # 1. Ошибки получения списка задач
-            - alert: TaskListErrors
+            - alert: BackendAvailabilityBelowSLA
               expr: |
-                sum(increase(http_requests_total{
-                  namespace="default",
-                  job="kubernetes-pods",
-                  handler="/api/tasks",
-                  method="GET",
-                  status="5xx"
-                }[5m])) >= 2
-              for: 0s
-              labels:
-                severity: warning
+                100 * avg_over_time(probe_success{
+                  job="blackbox",
+                  instance="http://backend.default.svc.cluster.local:8000/api/tasks"}[5m]
+                ) < 99
+              for: 1m
+              labels: {severity: warning, sli: availability}
               annotations:
-                summary: "Ошибки получения списка задач"
-                description: "За 5 минут произошло минимум 2 ошибки при получении списка."
-
-            # 2. Ошибки создания задач
-            - alert: TaskCreationErrors
+                summary: "Backend: доступность ниже SLA 99%"
+            - alert: FrontendAvailabilityBelowSLA
               expr: |
-                sum(increase(http_requests_total{
+                100 * avg_over_time(probe_success{
+                  job="blackbox",
+                  instance="http://frontend.default.svc.cluster.local/"}[5m]
+                ) < 99
+              for: 1m
+              labels: {severity: warning, sli: availability}
+              annotations:
+                summary: "Frontend: доступность ниже SLA 99%"
+            - alert: HttpSuccessBelowSLA
+              expr: |
+                (100 * (1 - (sum(increase(http_requests_total{
                   namespace="default",
                   job="kubernetes-pods",
-                  handler="/api/tasks",
+                  status="5xx"}[5m])) or vector(0)
+                ) 
+                / sum(increase(http_requests_total{
+                  namespace="default",
+                  job="kubernetes-pods"}[5m])))
+                ) < 99
+                and on() sum(increase(http_requests_total{
+                  namespace="default",
+                  job="kubernetes-pods"}[5m])
+                ) > 0
+              for: 1m
+              labels: {severity: warning, sli: http_success}
+              annotations:
+                summary: "Успешность HTTP без 5xx ниже SLA 99%"
+            - alert: HttpLatencyBelowSLA
+              expr: |
+                (100 * sum(increase(http_request_duration_seconds_bucket{
+                  namespace="default",
+                  job="kubernetes-pods",
+                  le="0.5"}[5m])
+                )
+                / sum(increase(http_request_duration_seconds_count{
+                  namespace="default",
+                  job="kubernetes-pods"}[5m]))
+                ) < 90
+                and on() sum(increase(http_request_duration_seconds_count{
+                  namespace="default",
+                  job="kubernetes-pods"}[5m])
+                ) > 0
+              for: 1m
+              labels: {severity: warning, sli: latency}
+              annotations:
+                summary: "Доля запросов до 500 мс ниже SLA 90%"
+            - alert: TaskCreationBelowSLA
+              expr: |
+                (100 * sum(increase(tasks_created_total{
+                  namespace="default",
+                  job="kubernetes-pods"}[5m])
+                )
+                / sum(increase(http_requests_total{
+                  namespace="default", 
+                  job="kubernetes-pods",
                   method="POST",
-                  status="5xx"
-                }[5m])) >= 2
-              for: 0s
-              labels:
-                severity: warning
-              annotations:
-                summary: "Ошибки создания задач"
-                description: "За 5 минут произошло минимум 2 ошибки при создании задач."
-
-            # 3. Ошибки изменения задач
-            - alert: TaskUpdateErrors
-              expr: |
-                sum(increase(http_requests_total{
+                  handler="/api/tasks"}[5m]))
+                ) < 99
+                and on() sum(increase(http_requests_total{
                   namespace="default",
                   job="kubernetes-pods",
-                  handler="/api/tasks/{task_id}",
-                  method="PUT",
-                  status="5xx"
-                }[5m])) >= 2
-              for: 0s
-              labels:
-                severity: warning
+                  method="POST",
+                  handler="/api/tasks"}[5m])
+                ) > 0
+              for: 1m
+              labels: {severity: warning, sli: task_create}
               annotations:
-                summary: "Ошибки изменения задач"
-                description: "За 5 минут произошло минимум 2 ошибки при изменении задач."
-
-            # 4. Память Python
+                summary: "Успешность создания задач ниже SLA 99%"
+            - alert: TaskDeletionBelowSLA
+              expr: |
+                (100 * sum(increase(tasks_deleted_total{
+                  namespace="default",
+                  job="kubernetes-pods"}[5m])
+                ) 
+                / sum(increase(http_requests_total{
+                  namespace="default",
+                  job="kubernetes-pods",
+                  method="DELETE",
+                  handler="/api/tasks/{task_id}"}[5m]))
+                ) < 99
+                and on() sum(increase(http_requests_total{
+                  namespace="default",
+                  job="kubernetes-pods",
+                  method="DELETE",
+                  handler="/api/tasks/{task_id}"}[5m])
+                ) > 0
+              for: 1m
+              labels: {severity: warning, sli: task_delete}
+              annotations:
+                summary: "Успешность удаления задач ниже SLA 99%"
             - alert: BackendHighMemory
               expr: |
-                process_resident_memory_bytes{
+                (
+                  100 * process_resident_memory_bytes{
+                    namespace="default",
+                    pod=~"backend-.*"
+                  }
+                  / on(namespace, pod)
+                  backend_memory_limit_bytes{
+                    namespace="default",
+                    pod=~"backend-.*"
+                  }
+                ) > 80
+                and on(namespace, pod)
+                backend_memory_limit_bytes{
                   namespace="default",
                   pod=~"backend-.*"
-                } > 209715200
+                } > 0
               for: 1m
               labels:
                 severity: warning
               annotations:
-                summary: "Высокое потребление памяти Backend"
-                description: "Python-процесс использует больше 200 МиБ памяти."
+                summary: "Python-процесс Backend использует более 80% лимита памяти контейнера"
 
 alertmanager:
   enabled: true

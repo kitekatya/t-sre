@@ -33,6 +33,9 @@ config:
         - source_labels: [__meta_kubernetes_namespace]
           target_label: namespace
 
+        - source_labels: [__meta_kubernetes_pod_label_version]
+          target_label: version
+
     - job_name: blackbox
       metrics_path: /probe
       scrape_interval: 15s
@@ -54,4 +57,9 @@ config:
 
         - target_label: __address__
           replacement: blackbox-prometheus-blackbox-exporter.monitoring.svc.cluster.local:9115
+
+    - job_name: kube-state-metrics
+      static_configs:
+        - targets:
+            - kube-state-metrics.monitoring.svc.cluster.local:8080
 ...

@@ -124,15 +124,19 @@ server:
                     pod=~"backend-.*"
                   }
                   / on(namespace, pod)
-                  backend_memory_limit_bytes{
+                  kube_pod_container_resource_limits{
                     namespace="default",
-                    pod=~"backend-.*"
+                    container="backend",
+                    resource="memory",
+                    unit="byte"
                   }
                 ) > 80
                 and on(namespace, pod)
-                backend_memory_limit_bytes{
+                kube_pod_container_resource_limits{
                   namespace="default",
-                  pod=~"backend-.*"
+                  container="backend",
+                  resource="memory",
+                  unit="byte"
                 } > 0
               for: 1m
               labels:

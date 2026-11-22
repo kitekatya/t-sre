@@ -1,0 +1,191 @@
+{
+  "id": null,
+  "uid": "task-deployment-strategies",
+  "title": "Task Tracker: Deployment Strategies",
+  "tags": [
+    "task-tracker",
+    "gateway-api",
+    "deployments"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "editable": true,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "RPS по версиям",
+      "description": "Показывает ответы backend на тестовый трафик; версия добавляется vmagent из pod label.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "showPoints": "never"
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          },
+          "expr": "sum by (version) (rate(http_requests_total{namespace=\"default\",version=~\"v1|v2\",handler!~\"/ready|/live\"}[30s]))",
+          "legendFormat": "{{version}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Доля всех HTTP-запросов: v1 и v2, %",
+      "description": "Доля всего HTTP-трафика по версиям за скользящую минуту (без фильтра по маршруту и методу). При нулевом трафике обе серии показывают 0%; при наличии запросов сумма долей ≈ 100%.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "showPoints": "never"
+          },
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          },
+          "expr": "100 * (sum(rate(http_requests_total{namespace=\"default\",version=\"v1\",handler!~\"/ready|/live\"}[30s])) or vector(0)) / clamp_min(sum(rate(http_requests_total{namespace=\"default\",version=~\"v1|v2\",handler!~\"/ready|/live\"}[30s])) or vector(0), 0.000001)",
+          "legendFormat": "v1, %"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          },
+          "expr": "100 * (sum(rate(http_requests_total{namespace=\"default\",version=\"v2\",handler!~\"/ready|/live\"}[30s])) or vector(0)) / clamp_min(sum(rate(http_requests_total{namespace=\"default\",version=~\"v1|v2\",handler!~\"/ready|/live\"}[30s])) or vector(0), 0.000001)",
+          "legendFormat": "v2, %"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Число подов backend по версиям",
+      "description": "Число доступных для scrape подов каждой версии, а не число Ready-подов.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "showPoints": "never"
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          },
+          "expr": "sum by (version) (up{namespace=\"default\",pod=~\"backend.*\",version=~\"v1|v2\"})",
+          "legendFormat": "{{version}}"
+        }
+      ]
+    }
+  ]
+}

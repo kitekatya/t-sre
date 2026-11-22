@@ -4,7 +4,7 @@ kind: Deployment
 metadata:
   name: backend
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: backend
@@ -18,8 +18,8 @@ spec:
         prometheus.io/path: "/metrics"
     spec:
       containers:
-      - image: task-tracker-backend:latest
-        imagePullPolicy: Never
+      - image: task-tracker-backend:v1
+        imagePullPolicy: IfNotPresent
         name: backend
         ports:
         - containerPort: 8000
@@ -36,6 +36,8 @@ spec:
           requests: {cpu: 100m, memory: 128Mi}
           limits: {cpu: 500m, memory: 384Mi}
         env:
+        - name: APP_VERSION
+          value: v1
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:

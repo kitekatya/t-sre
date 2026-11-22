@@ -16,3 +16,7 @@ configMapGenerator:
   - name: postgres-exporter-dashboard
     files:
       - grafana-dashboards/postgres-exporter.json
+
+  - name: deployment-strategies-dashboard
+    files:
+      - grafana-dashboards/deployment-strategies.json

@@ -45,8 +45,8 @@ config:
 
       static_configs:
         - targets:
-            - http://backend.default.svc.cluster.local:8000/api/tasks
-            - http://frontend.default.svc.cluster.local/
+            - http://task-envoy.envoy-gateway-system.svc.cluster.local/api/tasks
+            - http://task-envoy.envoy-gateway-system.svc.cluster.local/
 
       relabel_configs:
         - source_labels: [ __address__ ]

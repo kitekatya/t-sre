@@ -38,6 +38,18 @@ spec:
             secretKeyRef:
               name: task-tracker-secret
               key: POSTGRES_PASSWORD
+        readinessProbe:
+          exec:
+            command: [sh, -c, 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
+          periodSeconds: 5
+        livenessProbe:
+          exec:
+            command: [sh, -c, 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
+          initialDelaySeconds: 20
+          periodSeconds: 10
+        resources:
+          requests: {cpu: 100m, memory: 256Mi}
+          limits: {cpu: 750m, memory: 768Mi}
         volumeMounts:
         - name: postgres-data
           mountPath: /var/lib/postgresql/data
@@ -64,6 +76,9 @@ spec:
               secretKeyRef:
                 name: task-tracker-secret
                 key: POSTGRES_PASSWORD
+        resources:
+          requests: {cpu: 25m, memory: 32Mi}
+          limits: {cpu: 150m, memory: 128Mi}
       volumes:
       - name: postgres-data
         persistentVolumeClaim:

@@ -1,5 +1,7 @@
 from contextlib import asynccontextmanager
 
+from prometheus_client import Info
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -18,6 +20,9 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
 
 configure_logging()
+
+app_build = Info("task_tracker_build", "Task Tracker build information")
+app_build.info({"version": settings.app_version})
 
 app = FastAPI(title="Task Tracker API", version="1.0.0", lifespan=lifespan)
 

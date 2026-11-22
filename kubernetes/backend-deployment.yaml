@@ -23,6 +23,18 @@ spec:
         name: backend
         ports:
         - containerPort: 8000
+        readinessProbe:
+          httpGet: {path: /ready, port: 8000}
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        livenessProbe:
+          httpGet: {path: /live, port: 8000}
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        resources:
+          requests: {cpu: 100m, memory: 128Mi}
+          limits: {cpu: 500m, memory: 384Mi}
         env:
         - name: DATABASE_URL
           valueFrom:
